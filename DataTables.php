@@ -54,5 +54,14 @@ class DataTables extends CApplicationComponent
                 "plugins/integration/jqueryui/dataTables.jqueryui.css",
             ),
         ));
+        Yii::app()->clientScript->addPackage('datatables.foundation', array(
+            'baseUrl' => $this->_assetsUrl,
+            'js' => array(
+                YII_DEBUG ? "plugins/integration/foundation/dataTables.foundation.js" : "media/js/dataTables.foundation.min.js"
+            ),
+            'css' => array(
+                "plugins/integration/foundation/dataTables.foundation.css",
+            ),
+        ));
     }
 }

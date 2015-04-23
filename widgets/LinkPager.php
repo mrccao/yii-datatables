@@ -1,7 +1,12 @@
 <?php
 
-class BaseLinkPager extends CLinkPager
+class LinkPager extends CLinkPager
 {
+
+    /**
+     * @var string attributes for the pager container tag.
+     */
+    public $activeLinkClass = 'current';
 
     /**
      * @var string attributes for the pager container tag.
@@ -69,7 +74,7 @@ class BaseLinkPager extends CLinkPager
     protected function createPageButton($label, $page, $class, $hidden, $selected)
     {
         if ($hidden || $selected) {
-            $class .= ' paginate_button ' . ($hidden ? 'disabled' : 'current');
+            $class .= ' paginate_button ' . ($hidden ? 'disabled' : $this->activeLinkClass);
         } else {
             $class = 'paginate_button';
         }

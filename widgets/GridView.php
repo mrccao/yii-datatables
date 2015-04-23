@@ -23,13 +23,9 @@ class GridView extends CGridView
     /**
      * @var string theme name.
      * Valid values are 'base', 'bootstrap', 'jqueryUI' or 'foundation'.
+     * if you choose theme 'bootstrap' - you can specify additional classes for the table (e.g. 'table-bordered' or/and 'table-striped and etc.)
      */
     public $theme = "base";
-
-    /**
-     * @var array theme options.
-     */
-    public $themeOptions = array();
 
     /**
      * @var string type of data sources.
@@ -45,6 +41,12 @@ class GridView extends CGridView
      * @var boolean enable ajax pagination, sorting and filtering.
      */
     public $enableAjax = false;
+
+    /**
+     * @var array the configuration for the pager.
+     * Defaults to <code>array('class'=>'datatables.widgets.LinkPager')</code>.
+     */
+    public $pager = array('class' => 'datatables.widgets.LinkPager');
 
     /**
      * @var array options for datatables jquery plugin.
@@ -142,18 +144,24 @@ class GridView extends CGridView
     {
         switch ($this->theme) {
             case "base":
-                $this->pager = array('class' => 'datatables.widgets.BaseLinkPager');
                 $this->pagerCssClass = 'dataTables_wrapper';
                 break;
             case "bootstrap":
-                $this->tableHtmlOptions['class'] .= 'table';
-                $this->pager = array('class' => 'datatables.widgets.BootstrapLinkPager');
+                $this->pagerCssClass = 'pull-right';
+                $this->pager['htmlOptions']['class'] = 'pagination';
+                $this->pager['activeLinkClass'] = 'active';
+                $this->tableHtmlOptions['class'] .= ' table';
                 break;
             case "jqueryUI":
+                $this->pagerCssClass = 'dataTables_wrapper fg-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix';
                 $this->cs->registerCssFile(
                     $this->cs->getCoreScriptUrl().
                     '/jui/css/base/jquery-ui.css'
                 );
+                break;
+            case "foundation":
+                $this->pager['htmlOptions']['class'] = 'pagination';
+                $this->pagerCssClass = 'dataTables_paginate';
                 break;
         }
     }
@@ -272,13 +280,17 @@ class GridView extends CGridView
         Yii::app()->clientScript->registerPackage('datatables');
         if($this->theme == 'jqueryUI')
             $this->cs->registerPackage('datatables.jqueryUI');
+        if($this->theme == 'foundation') {
+            $this->cs->registerPackage('datatables.foundation');
+            $this->cs->registerCssFile('//cdn.jsdelivr.net/foundation/5.5.1/css/foundation.min.css');
+        }
         if(!$this->options['dom'] && $this->theme == 'jqueryUI')
             $this->options['dom'] = '<"fg-toolbar ui-widget-header ui-corner-tl ui-corner-tr ui-helper-clearfix"lfr>t<"fg-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix">';
         elseif(!$this->options['dom']) {
             $this->options['dom'] = 'lfrt';
         }
         $options = CJavaScript::encode($this->options);
-        $this->cs->registerScript(__CLASS__ . '#' . $id, "jQuery('#$id').DataTable($options);");
+        $this->cs->registerScript(__CLASS__ . '#' . $id, "jQuery('#$id').DataTable($options); $.fn.dataTableExt.sErrMode = 'function';");
         if ($this->disableBorderBottom) {
             $this->cs->registerCss(__CLASS__ . 'disableBorderBottom', "table.dataTable thead th, table.dataTable thead td {border-bottom: none !important;} .dataTables_wrapper.no-footer .dataTables_scrollBody {border-bottom: none !important;}");
         }
@@ -288,8 +300,8 @@ class GridView extends CGridView
     {
         if ($this->enableAjax) {
             $this->registerPagination();
-            $this->registerSortable();
-            //$this->registerFilterable();
+            $this->registerSorting();
+            $this->registerFiltering();
         }
     }
 
@@ -297,6 +309,7 @@ class GridView extends CGridView
     {
         $id = $this->getId();
         $pagerCssClass = $this->pagerCssClass ? ".{$this->pagerCssClass}" : "";
+        $pagerCssClass = empty(explode(' ',trim($pagerCssClass))[0]) ? $pagerCssClass : explode(' ',trim($pagerCssClass))[0];
         $this->cs->registerScript(__CLASS__ . '#' . $id . '_pagination', "$('#$id $pagerCssClass ul li').on('click', function(event) {
             event.preventDefault();
             if($(this).hasClass('disabled')) {
@@ -326,10 +339,10 @@ class GridView extends CGridView
         });");
     }
 
-    protected function registerSortable()
+    protected function registerSorting()
     {
         $id = $this->getId();
-        $this->cs->registerScript(__CLASS__ . '#' . $id . '_sortable', "jQuery('#$id table thead th[class*=sorting]').on('click', function(event) {
+        $this->cs->registerScript(__CLASS__ . '#' . $id . '_sorting', "jQuery('#$id table thead th[class*=sorting]').on('click', function(event) {
             event.preventDefault();
             var link = $(this).find('a');
             if ($.support.pjax) {
@@ -346,6 +359,39 @@ class GridView extends CGridView
                         ajax: '$id'
                     },
                     url: $(link).attr('href'),
+                    success: function(data) {
+                        var html = $(data).filter(':not(script[src])').filter(':not(link)');
+                        $('#$id').html(html);
+                    }
+                })
+            }
+        });");
+    }
+
+    protected function registerFiltering() {
+        $id = $this->getId();
+        $pager = new CLinkPager($this->pager);
+        $url = $pager->getPages()->createPageUrl($this->getController(), $pager->getPages()->currentPage);
+        $this->cs->registerScript(__CLASS__ . '#' . $id . '_filtering', "jQuery('#$id table thead tr.{$this->filterCssClass} td input').on('change', function(event) {
+            event.preventDefault();
+            var value = $(this).val();
+            var name = $(this).attr('name');
+            var data = {};
+            data[name] = value;
+            if ($.support.pjax) {
+                $.pjax({
+                    async: false,
+                    push: false,
+                    url: '$url',
+                    data: data,
+                    container: '#$id'
+                })
+            }
+            else {
+                data.ajax = '$id';
+                $.ajax({
+                    data: data,
+                    url: '$url',
                     success: function(data) {
                         var html = $(data).filter(':not(script[src])').filter(':not(link)');
                         $('#$id').html(html);

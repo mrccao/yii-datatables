@@ -6,46 +6,69 @@ https://datatables.net/
 Installation
 ------------
 
-1. composer
+###1. composer
 
-The preferred way to install this extension is through [composer](http://getcomposer.org/download/).
+ * The preferred way to install this extension is through [composer](http://getcomposer.org/download/).
 
-Either run
+ Either run
 
-```
-php composer.phar require --prefer-dist fourteenmeister/yii-datatables "*"
-```
+ ```
+ php composer.phar require --prefer-dist fourteenmeister/yii-datatables "*"
+ ```
 
-or add
+ or add
 
-```
-"fourteenmeister/yii-datatables": "*"
-```
+ ```
+ "fourteenmeister/yii-datatables": "*"
+ ```
 
-to the require section of your `composer.json` file.
+ to the require section of your `composer.json` file.
+ 
+ * configure the component
 
-Then there are two ways:
-a) insert a line in the file index.php (entry script)
+ ```php
+ 'preload' => array(
+     ... probably other preloaded components ...
+     'datatables'
+ ),
+ ...
+ 'components' => array(
+     ...
+     'datatables' => array(
+         'class' => 'webroot.vendor.fourteenmeister.yii-datatables.DataTables', //webroot is it alias => dirname(__FILE__) . DIRECTORY_SEPARATOR . '..\..',
+     ),
+ )
+ ```
 
+###2. github
+
+* download from [github](https://github.com/fourteenmeister/yii-datatables/archive/master.zip)
+* extract archive to extension directory.
+* configure the component
 ```php
-require(__DIR__ . '/protected/vendor/autoload.php')); // path to composer autoload
-```
-
-b) append to application configuration
-
-```php
-
-return array(
-    ...
-    'aliases' => array(
-        ...
-        'datatables' =>  '/protected/vendor/fourteenmeister/yii-datatables' //Path to source
-    )
-    ...
+'preload' => array(
+   ... probably other preloaded components ...
+   'datatables'
+),
+...
+'components' => array(
+   ...
+   'datatables' => array(
+       'class' => 'ext.yii-datatables.DataTables'
+   ),
 )
 ```
 
-2. github
-
 Usage
 -----
+
+```php
+$this->widget('datatables.widgets.GridView',
+    array(
+        'id' => 'tableID',
+        'dataProvider' => $dataProvider,
+        'columns' => $columns,
+        'theme' => 'base' //theme (bootstrap, jqueryUI, foundation)
+    )
+);
+```
