@@ -1,0 +1,21 @@
+{
+    "name": "fourteenmeister/yii-datatables",
+    "description": "yii-datatables",
+    "type": "yii-extension",
+    "keywords": [
+        "yii",
+        "extension"
+    ],
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Andrey Kamaev",
+            "email": "fourteenmeister@gmail.com",
+            "role": "Maintainer"
+        },
+    ],
+    "require": {
+        
+    },
+    "minimum-stability": "dev"
+}
